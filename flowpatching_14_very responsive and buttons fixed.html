@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unblurry System Simulator v15</title>
+</head>
+<body>
+
+<div id="unblurry-sim-v15">
+  <style>
+    /* SCOPED CSS */
+    #unblurry-sim-v15 {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #fdfbf7;
+      color: #1a1a1a;
+      padding: 10px;
+      border-radius: 8px;
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      overflow: hidden; 
+      box-sizing: border-box; 
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      user-select: none;
+      -webkit-user-select: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+    }
+
+    /* HEADER */
+    #unblurry-sim-v15 header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    #unblurry-sim-v15 .brand-mark {
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+    
+    #unblurry-sim-v15 .sys-status {
+      font-size: 0.7rem;
+      color: #666;
+    }
+
+    /* DASHBOARD */
+    #unblurry-sim-v15 .dashboard {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      background: rgba(255,255,255,0.6);
+      border: 1px dashed #ccc;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      flex-wrap: wrap;
+    }
+
+    #unblurry-sim-v15 .metric-box {
+      text-align: center;
+      min-width: 80px;
+    }
+
+    #unblurry-sim-v15 .metric-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 2px;
+    }
+
+    #unblurry-sim-v15 .metric-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      min-width: 120px;
+      transition: color 0.3s;
+    }
+
+    .val-spend { color: #e74c3c; }
+    .val-rev { color: #3f51b5; }
+    .profit-mode { color: #27ae60 !important; }
+
+    /* CANVAS WRAPPER */
+    #unblurry-sim-v15 .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 70%;
+      margin-bottom: 0; 
+      background: rgba(255,255,255,0.3);
+      border-radius: 4px 4px 0 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    #unblurry-sim-v15 svg.system-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      overflow: visible;
+    }
+
+    /* STRATEGY CONSOLE */
+    #unblurry-sim-v15 .strategy-console {
+      background: #fff;
+      border: 1px solid #1a1a1a;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 15px;
+      min-height: 120px; 
+      margin-bottom: 15px;
+      position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    #unblurry-sim-v15 .console-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+
+    #unblurry-sim-v15 .field-note h4 {
+      margin: 0 0 5px 0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      color: #1a1a1a;
+      border-bottom: 1px dashed #ccc;
+      padding-bottom: 5px;
+      display: inline-block;
+    }
+
+    #unblurry-sim-v15 .field-note p {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: #333;
+      font-family: Georgia, serif;
+      font-style: italic;
+    }
+    
+    #unblurry-sim-v15 .field-note {
+      display: none; 
+      animation: fadeIn 0.3s ease-out;
+    }
+    #unblurry-sim-v15 .field-note.visible { display: block; }
+
+    /* SYSTEM MESSAGE */
+    #unblurry-sim-v15 .sys-msg {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      width: 85%;
+      max-width: 450px;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 20px;
+      border-radius: 4px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      text-align: center;
+    }
+
+    #unblurry-sim-v15 .sys-msg.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    
+    #unblurry-sim-v15 .sys-msg.final-state {
+      top: 25%;
+    }
+
+    #unblurry-sim-v15 .sys-msg p {
+      margin: 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    /* STAMP */
+    #unblurry-sim-v15 .stamp-overlay {
+      position: absolute;
+      top: 60%; 
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-5deg) scale(0.5);
+      opacity: 0;
+      border: 4px solid #1a1a1a;
+      padding: 10px 20px;
+      text-align: center;
+      color: #1a1a1a;
+      background: rgba(255,255,255,0.95);
+      z-index: 150;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      width: 80%;
+    }
+    #unblurry-sim-v15 .stamp-overlay.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) rotate(-5deg) scale(1);
+    }
+
+    /* TOOLBOX - FLEXBOX FIX */
+    #unblurry-sim-v15 .toolbox {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      padding: 15px;
+      background: rgba(255,255,255,0.4);
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    #unblurry-sim-v15 .patch-card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-bottom: 3px solid #ccc;
+      border-radius: 4px;
+      padding: 10px 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s;
+      z-index: 50;
+      touch-action: none;
+      position: relative;
+      height: 70px;
+      /* Fixed width prevents stretching bug */
+      width: 140px; 
+      flex: 0 0 auto; 
+    }
+    
+    #unblurry-sim-v15 .patch-card:active {
+      transform: scale(0.97);
+      border-bottom: 1px solid #ccc;
+      top: 2px;
+    }
+    
+    #unblurry-sim-v15 .patch-card strong {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      margin-top: 5px;
+      pointer-events: none;
+      text-align: center;
+      color: #333;
+      line-height: 1.1;
+    }
+
+    .card-icon { width: 22px; height: 22px; pointer-events: none; }
+
+    /* SVG STYLES */
+    .ink-line { fill: none; stroke: #1a1a1a; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    
+    .leak-text { font-family: 'Courier New', Courier, monospace; font-size: 14px; fill: #1a1a1a; text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px; paint-order: stroke; stroke: #fdfbf7; stroke-width: 4px; stroke-linecap: butt; stroke-linejoin: round; }
+    .leak-text-sub { fill: #e74c3c; }
+    
+    .leak-spray { fill: none; stroke: #3498db; stroke-width: 3; opacity: 0.6; display: none; filter: url(#water-turb-v15); }
+    .leak-spray-gold { stroke: #3f51b5; }
+    
+    .water-pour { fill: none; stroke: #3f51b5; stroke-width: 8; opacity: 0.9; display: none; filter: url(#water-turb-v15); }
+
+    .leak-zone { fill: transparent; stroke: #e74c3c; stroke-width: 2; stroke-dasharray: 4 4; opacity: 0; transition: opacity 0.3s; }
+    .leak-zone.active { opacity: 0.5; animation: pulse-red 1.5s infinite; }
+
+    .start-trigger { font-size: 35px; cursor: pointer; filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.1)); transition: transform 0.2s; }
+    .start-trigger:hover { transform: scale(1.1); }
+    .start-label { font-size: 10px; fill: #e74c3c; font-weight: bold; animation: pulse 1.5s infinite; pointer-events: none; }
+
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    @keyframes pulse-red { 0% { stroke-opacity: 0.2; } 50% { stroke-opacity: 0.8; } 100% { stroke-opacity: 0.2; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  </style>
+
+  <header>
+    <div class="brand-mark">Unblurry System Sim v15</div>
+    <div class="sys-status">Status: <span id="status-text">Waiting for Investment...</span></div>
+  </header>
+
+  <div class="dashboard">
+    <div class="metric-box">
+      <div class="metric-label">Ad Spend</div>
+      <div class="metric-value val-spend" id="html-spend">€0</div>
+    </div>
+    <div class="metric-box">
+      <div class="metric-label">Revenue</div>
+      <div class="metric-value val-rev" id="html-rev">€0</div>
+    </div>
+  </div>
+  
+  <div class="canvas-wrapper">
+    <div class="sys-msg" id="sys-msg">
+        <p id="sys-msg-text">Message...</p>
+    </div>
+
+    <div id="final-stamp" class="stamp-overlay">
+      <h3 style="margin:0; font-size:1rem; text-transform:uppercase;">RELATIONSHIPS COMPOUND.<br>FUNNELS LEAK.</h3>
+    </div>
+
+    <svg class="system-canvas" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      
+      <defs>
+        <filter id="water-turb-v15">
+          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise">
+            <animate attributeName="baseFrequency" values="0.05;0.06;0.05" dur="1s" repeatCount="indefinite" />
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" />
+        </filter>
+        <g id="filter-icon-v15">
+          <path d="M 0,0 L 40,0 L 25,25 L 25,40 L 15,40 L 15,25 L 0,0 Z" fill="#1a1a1a" />
+        </g>
+
+        <g id="icon-star"><polygon points="15,0.5 5,28 29,9 1,9 25,28" fill="#f1c40f" stroke="#f39c12" stroke-width="1"/></g>
+        <g id="icon-glass"><circle cx="12" cy="12" r="10" fill="#e8f8f5" stroke="#27ae60" stroke-width="2"/><line x1="20" y1="20" x2="28" y2="28" stroke="#27ae60" stroke-width="3" stroke-linecap="round"/><path d="M8 12l3 3 6-6" fill="none" stroke="#27ae60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <g id="icon-camera"><rect x="2" y="6" width="26" height="20" rx="3" fill="#e91e63" stroke="#c2185b" stroke-width="1"/><circle cx="15" cy="16" r="6" fill="#333" stroke="#fff" stroke-width="2"/><rect x="20" y="2" width="6" height="4" fill="#c2185b"/></g>
+        <g id="icon-shield"><path d="M15,0 L28,6 v8 Q28,24 15,30 Q2,24 2,14 v-8 z" fill="#e67e22" stroke="#d35400" stroke-width="1"/><path d="M15,5 v20" stroke="rgba(255,255,255,0.3)" stroke-width="2"/></g>
+      </defs>
+
+      <line x1="100" y1="20" x2="100" y2="80" class="ink-line" />
+      <text id="start-hint" x="80" y="15" class="start-label">CLICK TO START</text>
+      <g id="start-group" transform="translate(80, 20)" style="cursor:pointer;">
+        <use href="#filter-icon-v15" x="0" y="30" />
+        <text x="0" y="20" class="start-trigger" id="euro-bill">💶</text>
+      </g>
+
+      <path class="ink-line" d="M 100,80 L 450,80" />
+      
+      <g transform="translate(450, 80)">
+        <text id="text-pos" x="-20" y="-15" class="leak-text"><tspan class="leak-text-sub">CONFUSION</tspan></text>
+        <circle r="30" class="leak-zone" id="zone-pos" />
+        <path class="ink-line" d="M -5,-7 L 10,-10 M -5,7 L 10,10" />
+        <path id="spray-pos" class="leak-spray" d="M 0,0 Q 20,-30 40,-40 M 0,0 Q 30,0 50,10 M 0,0 Q 20,30 40,40" />
+      </g>
+
+      <path class="ink-line" d="M 450,80 Q 550,80 550,150 Q 550,220 450,220" />
+
+      <path class="ink-line" d="M 450,220 L 200,220" />
+
+      <g transform="translate(200, 220)">
+        <text id="text-proof" x="-20" y="-15" class="leak-text"><tspan class="leak-text-sub">SKEPTICISM</tspan></text>
+        <circle r="30" class="leak-zone" id="zone-proof" />
+        <path class="ink-line" d="M -5,-7 L 10,-10 M -5,7 L 10,10" />
+        <path id="spray-proof" class="leak-spray" d="M 0,0 L -20,40 M 0,0 L -40,30" />
+      </g>
+
+      <path class="ink-line" d="M 200,220 Q 100,220 100,290 Q 100,360 200,360" />
+
+      <path class="ink-line" d="M 200,360 L 450,360" />
+
+      <g transform="translate(450, 360)">
+        <text id="text-assets" x="-20" y="-15" class="leak-text"><tspan class="leak-text-sub">UNDERVALUED</tspan></text>
+        <circle r="30" class="leak-zone" id="zone-assets" />
+        <path class="ink-line" d="M -5,-7 L 10,-10 M -5,7 L 10,10" />
+        <path id="spray-assets" class="leak-spray" d="M 0,0 Q 10,-40 20,-60" />
+      </g>
+
+      <path class="ink-line" d="M 450,360 L 600,360 L 620,450" />
+      
+      <path id="final-pour" class="water-pour" d="M 610,420 L 610,520" />
+
+      <g transform="translate(600, 450)">
+        <path class="ink-line" d="M -20,0 L -10,100 Q 10,110 30,100 L 40,0" />
+        <text x="10" y="50" font-size="10" font-family="Courier New" text-anchor="middle" fill="#555">CLIENTS</text>
+        <path id="bucket-water" fill="#3f51b5" opacity="0.9" filter="url(#water-turb-v15)" d="M -10,100 Q 10,110 30,100 Z" />
+        <g transform="translate(10, 105)">
+           <text id="text-consent" x="-60" y="35" class="leak-text"><tspan class="leak-text-sub">ENERGY DRAIN</tspan></text>
+           <circle r="30" class="leak-zone" id="zone-consent" />
+           <path id="spray-consent" class="leak-spray leak-spray-gold" d="M 0,0 L 0,40 M -5,0 L -10,30 M 5,0 L 10,30" />
+        </g>
+      </g>
+
+      <g id="patch-vis-pos" display="none" transform="translate(450,80)">
+        <use href="#icon-star" x="-15" y="-15" transform="scale(1.5) rotate(-5)" />
+      </g>
+      <g id="patch-vis-proof" display="none" transform="translate(200,220)">
+        <use href="#icon-glass" x="-15" y="-15" transform="scale(1.5) rotate(5)" />
+      </g>
+      <g id="patch-vis-assets" display="none" transform="translate(450,360)">
+        <use href="#icon-camera" x="-15" y="-15" transform="scale(1.5) rotate(-3)" />
+      </g>
+      <g id="patch-vis-consent" display="none" transform="translate(610,555)">
+        <use href="#icon-shield" x="-15" y="-15" transform="scale(1.5)" />
+      </g>
+
+    </svg>
+  </div>
+
+  <div class="strategy-console">
+    <div class="console-title">Strategy Notes / <span id="console-topic">Select a Patch</span></div>
+    
+    <div class="field-note" id="note-pos">
+        <h4>Real Positioning</h4>
+        <p>If a competitor can copy-paste your words, it’s not positioning, it’s noise. We remove the fluff until what’s left is un-fake-able and un-copy-paste-able. When you stop trying to speak to everyone, the right people feel seen instantly.</p>
+    </div>
+    <div class="field-note" id="note-proof">
+        <h4>Proof System</h4>
+        <p>Claims are cheap. Evidence is expensive. We replace 'trust me bro' energy with undeniable proof. We don't tell them you're good; we let them judge the evidence. This patch installs a Demonstration System that beats empty promises every time.</p>
+    </div>
+    <div class="field-note" id="note-assets">
+        <h4>Trust Assets</h4>
+        <p>You're good, but they can't *see* the premium value. We build assets that demonstrate Premium Expertise so price or worth is no longer a debate. It turns invisible labor into visible value.</p>
+    </div>
+    <div class="field-note" id="note-consent">
+        <h4>Consensual Commerce</h4>
+        <p>Tricks create transactions, but they breed resentment. A consensual marketing strategy means clients enter our world willingly. No buyer's remorse. No high-maintenance drama. Just real partnerships instead. We want clients we can build with.</p>
+    </div>
+  </div>
+
+  <div class="toolbox">
+    <div class="patch-card" data-type="pos" id="card-pos">
+      <svg class="card-icon" viewBox="0 0 30 30"><use href="#icon-star"/></svg>
+      <strong>Real Positioning</strong>
+    </div>
+    <div class="patch-card" data-type="proof" id="card-proof">
+      <svg class="card-icon" viewBox="0 0 30 30"><use href="#icon-glass"/></svg>
+      <strong>Proof System</strong>
+    </div>
+    <div class="patch-card" data-type="assets" id="card-assets">
+      <svg class="card-icon" viewBox="0 0 30 30"><use href="#icon-camera"/></svg>
+      <strong>Trust Assets</strong>
+    </div>
+    <div class="patch-card" data-type="consent" id="card-consent">
+      <svg class="card-icon" viewBox="0 0 30 30"><use href="#icon-shield"/></svg>
+      <strong>Consensual Commerce</strong>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // LOGIC
+      const MSG_PROFIT = "You are now reliably profitable. (Revenue > Spend)";
+      const MSG_COMPOUND = "This is the Moment we have been working for. The need for Ad Spend or organic-hustle drops significantly (efficiency), while revenue spikes and stays (compounding). It’s extremely satisfying to watch. Every time.";
+      const MSG_ORDER = "Please, trust the process; fix the leaks in turn.";
+
+      let state = {
+        trafficOn: false,
+        adSpend: 0,
+        revenue: 0,
+        fixed: { pos: false, proof: false, assets: false, consent: false },
+        msgShown3: false,
+        msgShown4: false,
+        frozen: false
+      };
+
+      const els = {
+        tickSpend: document.getElementById('html-spend'),
+        tickRev: document.getElementById('html-rev'),
+        euro: document.getElementById('euro-bill'),
+        hint: document.getElementById('start-hint'),
+        status: document.getElementById('status-text'),
+        sysMsg: document.getElementById('sys-msg'),
+        sysMsgBody: document.getElementById('sys-msg-text'),
+        stamp: document.getElementById('final-stamp'),
+        bucketWater: document.getElementById('bucket-water'),
+        finalPour: document.getElementById('final-pour'),
+        consoleTopic: document.getElementById('console-topic')
+      };
+
+      // --- TRAFFIC ---
+      document.getElementById('start-group').addEventListener('click', startTraffic);
+
+      function startTraffic() {
+        if(state.trafficOn) return;
+        state.trafficOn = true;
+        
+        els.euro.style.transition = "all 0.5s ease-in";
+        els.euro.style.transform = "translateY(15px) scale(0.1)";
+        els.euro.style.opacity = "0";
+        els.hint.style.display = 'none';
+        els.status.innerText = "System Active. Measuring leaks...";
+
+        setInterval(tickerLoop, 200); 
+        renderFlow();
+      }
+
+      function tickerLoop() {
+        if(state.frozen) return;
+
+        let spendRate = 2; 
+        let revRate = 0; 
+        
+        let count = 0;
+        if(state.fixed.pos) count++;
+        if(state.fixed.proof) count++;
+        if(state.fixed.assets) count++;
+        if(state.fixed.consent) count++;
+
+        if(count === 0) { spendRate = 5; revRate = 0; } 
+        else if(count === 1) { spendRate = 5; revRate = 0.5; }
+        else if(count === 2) { spendRate = 5; revRate = 3; }
+        else if(count === 3) { spendRate = 5; revRate = 7; }
+        else if(count === 4) { spendRate = 0.5; revRate = 55; } 
+
+        state.adSpend += spendRate;
+        state.revenue += revRate;
+
+        // CAP LOGIC
+        if(state.adSpend >= 25000 || state.revenue >= 25000) {
+            state.frozen = true;
+            els.status.innerText = "Sim Frozen. Ratio Locked.";
+        }
+
+        els.tickSpend.innerText = "€" + Math.floor(state.adSpend).toLocaleString();
+        els.tickRev.innerText = "€" + Math.floor(state.revenue).toLocaleString();
+        
+        if(state.revenue > state.adSpend && count >= 3) {
+           els.tickRev.classList.add('profit-mode');
+        }
+      }
+
+      // --- FLOW ---
+      function renderFlow() {
+        if(!state.trafficOn) return;
+
+        let count = 0;
+        if(state.fixed.pos) count++;
+        if(state.fixed.proof) count++;
+        if(state.fixed.assets) count++;
+        if(state.fixed.consent) count++;
+
+        if(count === 3 && !state.msgShown3) {
+            showSystemMessage(MSG_PROFIT);
+            state.msgShown3 = true;
+        }
+        if(count === 4 && !state.msgShown4) {
+             setTimeout(() => { 
+                showSystemMessage(MSG_COMPOUND); 
+                els.sysMsg.classList.add('final-state');
+             }, 500);
+             state.msgShown4 = true;
+             setTimeout(() => { finishGame(); }, 6000); 
+        }
+
+        // LEAK 1
+        if(!state.fixed.pos) {
+          document.getElementById('spray-pos').style.display = 'block';
+          activateZone('pos');
+        } else {
+          document.getElementById('spray-pos').style.display = 'none';
+          document.getElementById('text-pos').style.display = 'none';
+          deactivateZone('pos');
+        }
+
+        // LEAK 2
+        if(state.fixed.pos) {
+            if(!state.fixed.proof) {
+              document.getElementById('spray-proof').style.display = 'block';
+              activateZone('proof');
+            } else {
+              document.getElementById('spray-proof').style.display = 'none';
+              document.getElementById('text-proof').style.display = 'none';
+              deactivateZone('proof');
+            }
+        }
+
+        // LEAK 3
+        if(state.fixed.proof) {
+            if(!state.fixed.assets) {
+              document.getElementById('spray-assets').style.display = 'block';
+              activateZone('assets');
+            } else {
+              document.getElementById('spray-assets').style.display = 'none';
+              document.getElementById('text-assets').style.display = 'none';
+              deactivateZone('assets');
+            }
+        }
+
+        // LEAK 4
+        if(state.fixed.assets) {
+            if(!state.fixed.consent) {
+              els.bucketWater.setAttribute('d', 'M -10,100 Q 10,110 30,100 Z'); 
+              document.getElementById('spray-consent').style.display = 'block';
+              activateZone('consent');
+              els.finalPour.style.display = 'block'; 
+            } else {
+              document.getElementById('spray-consent').style.display = 'none';
+              document.getElementById('text-consent').style.display = 'none';
+              deactivateZone('consent');
+              els.status.innerText = "System Sealed. Trust Compounding.";
+              els.finalPour.style.display = 'block'; // Flowing strong
+              fillBucket();
+            }
+        }
+      }
+
+      function showSystemMessage(txt) {
+         els.sysMsgBody.innerText = txt;
+         els.sysMsg.classList.add('visible');
+         if(txt === MSG_PROFIT || txt === MSG_ORDER) setTimeout(() => { els.sysMsg.classList.remove('visible'); }, 4000);
+      }
+
+      function finishGame() { els.stamp.classList.add('show'); }
+      function activateZone(id) { document.getElementById('zone-'+id).classList.add('active'); }
+      function deactivateZone(id) { document.getElementById('zone-'+id).classList.remove('active'); }
+
+      function fillBucket() {
+        let h = 100;
+        const interval = setInterval(() => {
+          h -= 1;
+          const d = `M -10,100 Q 10,110 30,100 L 40,${h} Q 10,${h+10} -20,${h} Z`;
+          els.bucketWater.setAttribute('d', d);
+          if(h <= 10) clearInterval(interval);
+        }, 20);
+      }
+
+      // --- DRAG & CLICK ---
+      let dragged = null;
+      let startX, startY;
+      let didMove = false;
+      const cards = document.querySelectorAll('.patch-card');
+      
+      cards.forEach(c => {
+        c.addEventListener('mousedown', startInteraction);
+        c.addEventListener('touchstart', startInteraction, {passive: false});
+        c.addEventListener('click', (e) => {});
+      });
+
+      function startInteraction(e) {
+        if(!state.trafficOn) return; 
+        
+        dragged = this;
+        didMove = false;
+        
+        const type = dragged.dataset.type;
+        showNote(type);
+
+        const input = e.type === 'touchstart' ? e.touches[0] : e;
+        const rect = dragged.getBoundingClientRect();
+        startX = input.clientX - rect.left;
+        startY = input.clientY - rect.top;
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, {passive: false});
+        document.addEventListener('touchend', onEnd);
+      }
+
+      function showNote(type) {
+          document.querySelectorAll('.field-note').forEach(n => n.classList.remove('visible'));
+          const note = document.getElementById('note-'+type);
+          if(note) note.classList.add('visible');
+          els.consoleTopic.innerText = document.querySelector(`#card-${type} strong`).innerText;
+      }
+
+      function onMove(e) {
+        e.preventDefault();
+        didMove = true;
+        const input = e.type === 'touchmove' ? e.touches[0] : e;
+        
+        if(dragged) {
+            dragged.style.position = 'fixed';
+            dragged.style.zIndex = 1000;
+            // Removed fixed width here to respect CSS width, 
+            // but setting it matches the card to prevent visual jump
+            dragged.style.width = '140px'; 
+            moveDrag(input.clientX, input.clientY);
+        }
+      }
+
+      function moveDrag(x, y) {
+        dragged.style.left = (x - startX) + 'px';
+        dragged.style.top = (y - startY) + 'px';
+      }
+
+      function onEnd(e) {
+        if(!dragged) return;
+
+        if(didMove) {
+            const type = dragged.dataset.type;
+            const zone = document.getElementById('zone-' + type);
+            
+            // ORDER CHECK
+            if(zone && isOverlapping(dragged, zone)) {
+                if(checkOrder(type)) {
+                    applyPatch(type);
+                } else {
+                    showSystemMessage(MSG_ORDER);
+                    resetDrag(dragged);
+                }
+            } else {
+                resetDrag(dragged);
+            }
+        } 
+        
+        dragged = null;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+      }
+
+      function checkOrder(type) {
+          // Logic: Can only fix if previous is fixed
+          // flow: pos -> proof -> assets -> consent
+          if(type === 'pos') return true; // First one always ok
+          if(type === 'proof') return state.fixed.pos;
+          if(type === 'assets') return state.fixed.proof;
+          if(type === 'consent') return state.fixed.assets;
+          return false;
+      }
+
+      function isOverlapping(el1, el2) {
+        const r1 = el1.getBoundingClientRect();
+        const r2 = el2.getBoundingClientRect();
+        return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
+      }
+
+      function applyPatch(type) {
+        document.getElementById('card-'+type).style.display = 'none';
+        document.getElementById('patch-vis-'+type).style.display = 'block';
+        state.fixed[type] = true;
+        renderFlow();
+      }
+
+      function resetDrag(el) {
+        el.style.position = 'static';
+        el.style.transform = 'none';
+        el.style.zIndex = 50;
+      }
+
+    })();
+  </script>
+</div>
+</body>
+</html>
